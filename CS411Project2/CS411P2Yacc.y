@@ -1,29 +1,5 @@
 %{
 #include <stdio.h>
-#include <stdlib.h>
-
-extern int yylex();
-extern int yyparse();
-
-void yyerror(char* s){
-  printf ("Reject");
-  exit(-1);
-}
-
-int yywrap(){
-return 1;
-}
-
-main(){
-  int rtnVal = yyparse();
-  if (rrnVal == 0){
-    printf("Accept");
-  }
-  else{
-    printf("Reject");
-  }
-}
-
 %}
 
 %start Program
@@ -40,7 +16,10 @@ main(){
 %left _leftbracket _rightbracket _period
 %nonassoc IFOnly
 %nonassoc _else
+%nonassoc TYPE_AND_ID
+%nonassoc ID_ONLY
 %expect 2
+
 %%
 
 Program : Decls {printf("[Reduce %i%s", yyn, "]");}
@@ -64,7 +43,7 @@ VariableDecls : /* zero */        {printf("[Reduce %i%s", yyn, "]");}
 VariableDecl : Variable _semicolon {printf("[Reduce %i%s", yyn, "]");}
 	 ;
 
-Variable : Type _id {printf("[Reduce %i%s", yyn, "]");}
+Variable : Type _id {printf("[Reduce %i%s", yyn, "]");} %prec TYPE_AND_ID
 	 ;
 
 Type : _int         {printf("[Reduce %i%s", yyn, "]");}
@@ -72,7 +51,7 @@ Type : _int         {printf("[Reduce %i%s", yyn, "]");}
 	 | _boolean     {printf("[Reduce %i%s", yyn, "]");}
 	 | _string      {printf("[Reduce %i%s", yyn, "]");}
 	 | Type _leftbracket _rightbracket {printf("[Reduce %i%s", yyn, "]");} 
-	 | _id          {printf("[Reduce %i%s", yyn, "]");}
+	 | _id          {printf("[Reduce %i%s", yyn, "]");} %prec ID_ONLY
 	 ;
 
 FunctionDecl : Type _id _leftparen Formals _rightparen StmtBlock {printf("[Reduce %i%s", yyn, "]");}
@@ -192,10 +171,12 @@ Expr : Lvalue _assignop Expr {printf("[Reduce %i%s", yyn, "]");}
 
  
 /*Shift-Reduce */
-Lvalue : _id {printf("[Reduce %i%s", yyn, "]");}
-	 | Lvalue _leftbracket Expr _rightbracket   {printf("[Reduce %i%s", yyn, "]");}
-	 | Lvalue _period _id                       {printf("[Reduce %i%s", yyn, "]");}
+Lvalue : _id {printf("[Reduce %i%s", yyn, "]");} 
+	 | Lvalue LvalueX   {printf("[Reduce %i%s", yyn, "]");}
 	 ;
+
+LvalueX : _leftbracket Expr _rightbracket  	{printf("[Reduce %i%s", yyn, "]");}
+   	| _period _id  				{printf("[Reduce %i%s", yyn, "]");}
 
 Call : _id _leftparen Actuals _rightparen             {printf("[Reduce %i%s", yyn, "]");}
 	 | _id _period _id _leftparen Actuals _rightparen {printf("[Reduce %i%s", yyn, "]");}
